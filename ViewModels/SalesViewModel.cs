@@ -143,13 +143,18 @@ namespace PosApp.ViewModels
                 };
                 await database.SaveOrderAsync(newOrder);
 
-                // 3. Clear cart and reset totals
+                // 3. Create a snapshot copy of the cart and total to pass to the Receipt Modal
+                var receiptItems = new ObservableCollection<SalesItem>(CartItems);
+                var receiptTotal = GrandTotal;
+
+                // 4. Clear cart and reset totals for the next customer
                 CartItems.Clear();
                 CalculateGrandTotal();
 
+                // 5. Pop up the receipt modal
                 if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
                 {
-                    await currentPage.DisplayAlert("Success", "Sale completed, stock updated, and order recorded!", "OK");
+                    await currentPage.Navigation.PushModalAsync(new Views.ReceiptPopupPage(receiptItems, receiptTotal));
                 }
             });
         }

@@ -10,7 +10,6 @@
 
     <Grid RowDefinitions="Auto, *" Padding="20" RowSpacing="20">
 
-        <!-- CUSTOM TOP NAVIGATION & TITLE BAR -->
         <Border Grid.Row="0" StrokeShape="RoundRectangle 12" Stroke="#E2E8F0" BackgroundColor="White" Padding="16">
             <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
                 <VerticalStackLayout Grid.Column="0" Spacing="2">
@@ -26,7 +25,6 @@
             </Grid>
         </Border>
 
-        <!-- MAIN CONTENT AREA: Orders List -->
         <Grid Grid.Row="1" RowDefinitions="Auto, *">
             <VerticalStackLayout Grid.Row="0" Spacing="4" Margin="0,0,0,12">
                 <Label Text="Completed Transactions" FontSize="20" FontAttributes="Bold" TextColor="#0F172A" />
