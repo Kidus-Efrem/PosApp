@@ -1,25 +1,26 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace PosApp.Models;
-
-public partial class SalesItem : ObservableObject
+namespace PosApp.Models
 {
-    public int ProductId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public decimal Price { get; set; }
-
-    private int quantity;
-    public int Quantity
+    public partial class SalesItem : ObservableObject
     {
-        get => quantity;
-        set
+        public int ProductId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+
+        private int quantity;
+        public int Quantity
         {
-            if (SetProperty(ref quantity, value))
+            get => quantity;
+            set
             {
-                OnPropertyChanged(nameof(TotalPrice));
+                if (SetProperty(ref quantity, value))
+                {
+                    OnPropertyChanged(nameof(TotalPrice));
+                }
             }
         }
-    }
 
-    public decimal TotalPrice => Price * Quantity;
+        public decimal TotalPrice => Price * Quantity;
+    }
 }

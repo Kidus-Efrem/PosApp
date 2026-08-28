@@ -13,7 +13,7 @@
         <Grid Grid.Column="0" RowDefinitions="Auto, *">
             <VerticalStackLayout Grid.Row="0" Spacing="4" Margin="0,0,0,10">
                 <Label Text="Item Catalog" FontSize="22" FontAttributes="Bold" TextColor="White" />
-                <Label Text="Click any item below to add it to the order." FontSize="12" TextColor="#CCCCCC" />
+                <Label Text="Use +/- to select amount, then click Set to update the cart." FontSize="12" TextColor="#CCCCCC" />
             </VerticalStackLayout>
 
             <CollectionView Grid.Row="1" ItemsSource="{Binding Products}" SelectionMode="None">
@@ -23,14 +23,36 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Product">
                         <Border StrokeShape="RoundRectangle 8" Stroke="LightGray" BackgroundColor="White" Padding="12">
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:SalesViewModel}}, Path=AddToCartCommand}"
-                                                      CommandParameter="{Binding .}" />
-                            </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="6">
                                 <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="#222222" LineBreakMode="TailTruncation" />
                                 <Label Text="{Binding Price, StringFormat='${0:F2}'}" TextColor="#2E7D32" FontSize="15" FontAttributes="Bold" />
                                 <Label Text="{Binding Stock, StringFormat='Stock: {0}'}" TextColor="#666666" FontSize="12" />
+
+                                <!-- Plus/Minus and Set Controls -->
+                                <Grid ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="4" Margin="0,4,0,0">
+                                    <!-- Minus Button -->
+                                    <Button Grid.Column="0" Text="-" 
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:SalesViewModel}}, Path=DecreaseSelectedQtyCommand}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#E0E0E0" TextColor="#222222" FontSize="12" FontAttributes="Bold" HeightRequest="32" WidthRequest="32" Padding="0" />
+
+                                    <!-- Quantity Entry (Bounded by Stock) -->
+                                    <Border Grid.Column="1" StrokeShape="RoundRectangle 4" Stroke="#CCCCCC" BackgroundColor="#F9F9F9" HeightRequest="32">
+                                        <Entry Text="{Binding SelectedQuantity, Mode=TwoWay}" Keyboard="Numeric" TextColor="#222222" FontSize="13" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                    </Border>
+
+                                    <!-- Plus Button -->
+                                    <Button Grid.Column="2" Text="+" 
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:SalesViewModel}}, Path=IncreaseSelectedQtyCommand}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#E0E0E0" TextColor="#222222" FontSize="12" FontAttributes="Bold" HeightRequest="32" WidthRequest="32" Padding="0" />
+
+                                    <!-- Set Button -->
+                                    <Button Grid.Column="3" Text="Set" 
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:SalesViewModel}}, Path=SetCartQuantityCommand}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#2E7D32" TextColor="White" FontSize="11" FontAttributes="Bold" HeightRequest="32" Padding="10,0" />
+                                </Grid>
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>
@@ -43,18 +65,17 @@
             <Grid RowDefinitions="Auto, *, Auto, Auto" RowSpacing="12">
                 <Label Grid.Row="0" Text="Current Cart" FontSize="20" FontAttributes="Bold" TextColor="#222222" />
 
-                <!-- Items List in Cart with Direct Quantity Entry -->
+                <!-- Items List in Cart -->
                 <CollectionView Grid.Row="1" ItemsSource="{Binding CartItems}" SelectionMode="None">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:SalesItem">
-                            <Grid ColumnDefinitions="*, 60, Auto" Padding="0,6" ColumnSpacing="10">
+                            <Grid ColumnDefinitions="*, Auto, Auto" Padding="0,6" ColumnSpacing="10" VerticalOptions="Center">
                                 <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
                                     <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="14" TextColor="#222222" LineBreakMode="TailTruncation" />
                                     <Label Text="{Binding Price, StringFormat='${0:F2}'}" FontSize="12" TextColor="#666666" />
                                 </VerticalStackLayout>
 
-                                <!-- Direct quantity entry field -->
-                                <Entry Grid.Column="1" Text="{Binding Quantity}" Keyboard="Numeric" HeightRequest="36" VerticalOptions="Center" TextColor="#222222" HorizontalTextAlignment="Center"/>
+                                <Label Grid.Column="1" Text="{Binding Quantity, StringFormat='x{0}'}" VerticalOptions="Center" FontSize="14" FontAttributes="Bold" TextColor="#222222" />
 
                                 <Button Grid.Column="2" Text="X" Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:SalesViewModel}}, Path=RemoveFromCartCommand}"
                                         CommandParameter="{Binding .}" BackgroundColor="#D32F2F" TextColor="White" HeightRequest="36" WidthRequest="36" Padding="0" />

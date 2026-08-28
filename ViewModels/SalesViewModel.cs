@@ -1,104 +1,150 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using PosApp.Models;
 using PosApp.Services;
-using System.Collections.ObjectModel;
 
-namespace PosApp.ViewModels;
-
-public partial class SalesViewModel : ObservableObject
+namespace PosApp.ViewModels
 {
-    private readonly PosDatabase _database;
-
-    public ObservableCollection<Product> Products { get; } = new();
-    public ObservableCollection<SalesItem> CartItems { get; } = new();
-
-    private decimal subTotal;
-    public decimal SubTotal
+    public class SalesViewModel : INotifyPropertyChanged
     {
-        get => subTotal;
-        set
+        public ObservableCollection<Product> Products { get; set; } = new();
+        public ObservableCollection<SalesItem> CartItems { get; set; } = new();
+
+        private decimal _grandTotal;
+        public decimal GrandTotal
         {
-            if (SetProperty(ref subTotal, value))
-            {
-                OnPropertyChanged(nameof(GrandTotal));
-            }
+            get => _grandTotal;
+            set { _grandTotal = value; OnPropertyChanged(); }
         }
-    }
 
-    public decimal GrandTotal => SubTotal;
+        public ICommand IncreaseSelectedQtyCommand { get; }
+        public ICommand DecreaseSelectedQtyCommand { get; }
+        public ICommand SetCartQuantityCommand { get; }
+        public ICommand RemoveFromCartCommand { get; }
+        public ICommand CompleteCheckoutCommand { get; }
 
-    public SalesViewModel()
-    {
-        _database = new PosDatabase();
-        _ = LoadCatalogAsync();
-    }
-
-    [RelayCommand]
-    public async Task LoadCatalogAsync()
-    {
-        var list = await _database.GetProductsAsync();
-        Products.Clear();
-        foreach (var p in list)
+        public SalesViewModel()
         {
-            Products.Add(p);
-        }
-    }
-
-    [RelayCommand]
-    public void AddToCart(Product? product)
-    {
-        if (product == null) return;
-
-        var existingItem = CartItems.FirstOrDefault(c => c.ProductId == product.Id);
-        if (existingItem != null)
-        {
-            if (existingItem.Quantity < product.Stock)
+            DecreaseSelectedQtyCommand = new Command<Product>(product =>
             {
-                existingItem.Quantity++;
-            }
-        }
-        else if (product.Stock > 0)
-        {
-            CartItems.Add(new SalesItem
+                if (product != null && product.SelectedQuantity > 0)
+                {
+                    product.SelectedQuantity--;
+                }
+            });
+
+            IncreaseSelectedQtyCommand = new Command<Product>(async product =>
             {
-                ProductId = product.Id,
-                Name = product.Name,
-                Price = product.Price,
-                Quantity = 1
+                if (product != null)
+                {
+                    if (product.SelectedQuantity < product.Stock)
+                    {
+                        product.SelectedQuantity++;
+                    }
+                    else
+                    {
+                        if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
+                        {
+                            await currentPage.DisplayAlert("Stock Limit", $"Cannot exceed available stock ({product.Stock}).", "OK");
+                        }
+                    }
+                }
+            });
+
+            SetCartQuantityCommand = new Command<Product>(async product =>
+            {
+                if (product == null) return;
+
+                // Strict block: if typed value exceeds stock, abort and notify
+                if (product.SelectedQuantity > product.Stock)
+                {
+                    if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
+                    {
+                        await currentPage.DisplayAlert("Invalid Quantity", $"Cannot set quantity higher than available stock ({product.Stock}).", "OK");
+                    }
+                    product.SelectedQuantity = product.Stock; // Reset input field to max allowable stock
+                    return;
+                }
+
+                if (product.SelectedQuantity < 0)
+                {
+                    product.SelectedQuantity = 0;
+                }
+
+                var existingItem = CartItems.FirstOrDefault(x => x.ProductId == product.Id);
+
+                if (product.SelectedQuantity == 0)
+                {
+                    if (existingItem != null)
+                    {
+                        CartItems.Remove(existingItem);
+                    }
+                }
+                else
+                {
+                    if (existingItem != null)
+                    {
+                        existingItem.Quantity = product.SelectedQuantity;
+                    }
+                    else
+                    {
+                        CartItems.Add(new SalesItem
+                        {
+                            ProductId = product.Id,
+                            Name = product.Name,
+                            Price = product.Price,
+                            Quantity = product.SelectedQuantity
+                        });
+                    }
+                }
+
+                CalculateGrandTotal();
+            });
+
+            RemoveFromCartCommand = new Command<SalesItem>(item =>
+            {
+                if (item != null)
+                {
+                    CartItems.Remove(item);
+                    CalculateGrandTotal();
+                }
+            });
+
+            CompleteCheckoutCommand = new Command(async () =>
+            {
+                if (CartItems.Count == 0) return;
+
+                CartItems.Clear();
+                CalculateGrandTotal();
+
+                if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
+                {
+                    await currentPage.DisplayAlert("Success", "Sale completed successfully!", "OK");
+                }
             });
         }
-        CalculateTotals();
-    }
 
-    [RelayCommand]
-    public void RemoveFromCart(SalesItem? item)
-    {
-        if (item == null) return;
-
-        if (item.Quantity > 1)
+        public void CalculateGrandTotal()
         {
-            item.Quantity--;
+            GrandTotal = CartItems.Sum(x => x.TotalPrice);
         }
-        else
+
+        public async Task LoadCatalogAsync()
         {
-            CartItems.Remove(item);
+            var database = new PosDatabase();
+            var list = await database.GetProductsAsync();
+
+            Products.Clear();
+            foreach (var p in list)
+            {
+                Products.Add(p);
+            }
         }
-        CalculateTotals();
-    }
 
-    private void CalculateTotals()
-    {
-        SubTotal = CartItems.Sum(i => i.TotalPrice);
-    }
-
-    [RelayCommand]
-    public async Task CompleteCheckoutAsync()
-    {
-        if (!CartItems.Any()) return;
-
-        CartItems.Clear();
-        CalculateTotals();
-        await LoadCatalogAsync();
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null!) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
