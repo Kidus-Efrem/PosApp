@@ -5,7 +5,7 @@ namespace PosApp.Services
 {
     public class PosDatabase
     {
-         SQLiteAsyncConnection? _database = null;
+        SQLiteAsyncConnection? _database = null;
 
         private async Task Init()
         {
@@ -38,6 +38,19 @@ namespace PosApp.Services
         {
             await Init();
             return await _database.DeleteAsync(product);
+        }
+
+        // --- ORDER METHODS FOR SALES HISTORY ---
+        public async Task<List<Order>> GetOrdersAsync()
+        {
+            await Init();
+            return await _database.Table<Order>().OrderByDescending(o => o.OrderDate).ToListAsync();
+        }
+
+        public async Task<int> SaveOrderAsync(Order order)
+        {
+            await Init();
+            return await _database.InsertAsync(order);
         }
     }
 }
