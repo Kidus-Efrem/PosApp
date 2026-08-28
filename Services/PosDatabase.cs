@@ -5,7 +5,7 @@ namespace PosApp.Services
 {
     public class PosDatabase
     {
-        private SQLiteAsyncConnection _database;
+         SQLiteAsyncConnection? _database = null;
 
         private async Task Init()
         {

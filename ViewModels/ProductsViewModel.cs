@@ -16,10 +16,10 @@ namespace PosApp.ViewModels
         string productName;
 
         [ObservableProperty]
-        decimal productPrice;
+        decimal? productPrice;
 
         [ObservableProperty]
-        int productStock;
+        int? productStock;
 
         public ProductsViewModel()
         {
@@ -40,22 +40,22 @@ namespace PosApp.ViewModels
         [RelayCommand]
         public async Task AddProductAsync()
         {
-            if (string.IsNullOrWhiteSpace(ProductName) || ProductPrice <= 0)
+            if (string.IsNullOrWhiteSpace(ProductName) || !ProductPrice.HasValue || ProductPrice <= 0)
                 return;
 
             var newProduct = new Product
             {
                 Name = ProductName,
-                Price = ProductPrice,
-                Stock = ProductStock
+                Price = ProductPrice ?? 0m,
+                Stock = ProductStock ?? 0
             };
 
             await _database.SaveProductAsync(newProduct);
 
             // Clear inputs
             ProductName = string.Empty;
-            ProductPrice = 0;
-            ProductStock = 0;
+            ProductPrice = null;
+            ProductStock = null;
 
             await LoadProductsAsync();
         }
