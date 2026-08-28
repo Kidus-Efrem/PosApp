@@ -20,6 +20,13 @@ namespace PosApp.ViewModels
             set { _grandTotal = value; OnPropertyChanged(); }
         }
 
+        private decimal _taxAmount;
+        public decimal TaxAmount
+        {
+            get => _taxAmount;
+            set { _taxAmount = value; OnPropertyChanged(); }
+        }
+
         // --- FILTER & SORT PROPERTIES ---
         private string _searchQuery = string.Empty;
         public string SearchQuery { get => _searchQuery; set { _searchQuery = value; OnPropertyChanged(); ApplyFilters(); } }
@@ -278,6 +285,8 @@ namespace PosApp.ViewModels
                 await database.SaveOrderAsync(newOrder);
 
                 var receiptItems = new ObservableCollection<SalesItem>(CartItems);
+                var receiptSubtotal = Subtotal;
+                var receiptTax = TaxAmount;
                 var receiptTotal = GrandTotal;
 
                 CartItems.Clear();
@@ -289,7 +298,7 @@ namespace PosApp.ViewModels
 
                 if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
                 {
-                    await currentPage.Navigation.PushModalAsync(new Views.ReceiptPopupPage(receiptItems, receiptTotal));
+                    await currentPage.Navigation.PushModalAsync(new Views.ReceiptPopupPage(receiptItems, receiptSubtotal, receiptTax, receiptTotal));
                 }
             });
         }
@@ -309,7 +318,11 @@ namespace PosApp.ViewModels
                 DiscountAmount = Subtotal;
             }
 
-            GrandTotal = Subtotal - DiscountAmount;
+            // Calculate taxable amount after discount, then compute 8.5% sales tax
+            decimal taxableAmount = Subtotal - DiscountAmount;
+            TaxAmount = Math.Round(taxableAmount * 0.085m, 2);
+
+            GrandTotal = taxableAmount + TaxAmount;
             if (GrandTotal < 0) GrandTotal = 0;
         }
 

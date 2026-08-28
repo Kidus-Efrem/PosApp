@@ -4,7 +4,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Collections.ObjectModel;
-using QColors = QuestPDF.Helpers.Colors; // This solves the ambiguous reference!
+using QColors = QuestPDF.Helpers.Colors;
 
 namespace PosApp.Views;
 
@@ -12,9 +12,11 @@ public partial class ReceiptPopupPage : ContentPage
 {
     public DateTime OrderDate { get; set; }
     public ObservableCollection<SalesItem> PurchasedItems { get; set; }
+    public decimal ReceiptSubtotal { get; set; }
+    public decimal ReceiptTax { get; set; }
     public decimal GrandTotal { get; set; }
 
-    public ReceiptPopupPage(ObservableCollection<SalesItem> items, decimal total)
+    public ReceiptPopupPage(ObservableCollection<SalesItem> items, decimal subtotal, decimal taxAmount, decimal total)
     {
         InitializeComponent();
 
@@ -22,6 +24,8 @@ public partial class ReceiptPopupPage : ContentPage
 
         OrderDate = DateTime.Now;
         PurchasedItems = new ObservableCollection<SalesItem>(items);
+        ReceiptSubtotal = subtotal;
+        ReceiptTax = taxAmount;
         GrandTotal = total;
 
         BindingContext = this;
@@ -45,7 +49,7 @@ public partial class ReceiptPopupPage : ContentPage
                 {
                     page.Size(PageSizes.A5);
                     page.Margin(1, Unit.Centimetre);
-                    page.PageColor(QColors.White); // Updated to use the alias
+                    page.PageColor(QColors.White);
                     page.DefaultTextStyle(x => x.FontSize(12));
 
                     page.Header().Text("PosApp Receipt").SemiBold().FontSize(20).FontColor(QColors.Teal.Darken2);
@@ -68,7 +72,9 @@ public partial class ReceiptPopupPage : ContentPage
                         }
 
                         x.Item().LineHorizontal(1).LineColor(QColors.Grey.Lighten2);
-                        x.Item().AlignRight().Text($"Total: ${GrandTotal:F2}").SemiBold().FontSize(14);
+                        x.Item().Text($"Subtotal: ${ReceiptSubtotal:F2}").FontSize(11);
+                        x.Item().Text($"Sales Tax (8.5%): ${ReceiptTax:F2}").FontSize(11);
+                        x.Item().AlignRight().Text($"Total Paid: ${GrandTotal:F2}").SemiBold().FontSize(14).FontColor(QColors.Green.Darken2);
                     });
 
                     page.Footer().AlignCenter().Text("Thank you for your purchase!");
