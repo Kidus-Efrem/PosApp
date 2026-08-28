@@ -52,6 +52,44 @@ namespace PosApp.ViewModels
         public bool IsCashSelected => SelectedPaymentMethod == "Cash";
         public bool IsCardSelected => SelectedPaymentMethod == "Card";
 
+        // --- PROMO CODE PROPERTIES ---
+        private string _promoCodeInput = string.Empty;
+        public string PromoCodeInput
+        {
+            get => _promoCodeInput;
+            set { _promoCodeInput = value; OnPropertyChanged(); }
+        }
+
+        private decimal _discountAmount;
+        public decimal DiscountAmount
+        {
+            get => _discountAmount;
+            set { _discountAmount = value; OnPropertyChanged(); }
+        }
+
+        private string _appliedPromoName = string.Empty;
+        public string AppliedPromoName
+        {
+            get => _appliedPromoName;
+            set
+            {
+                _appliedPromoName = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasPromoApplied));
+                OnPropertyChanged(nameof(ShowPromoInput));
+            }
+        }
+
+        public bool HasPromoApplied => !string.IsNullOrEmpty(AppliedPromoName);
+        public bool ShowPromoInput => string.IsNullOrEmpty(AppliedPromoName);
+
+        private decimal _subtotal;
+        public decimal Subtotal
+        {
+            get => _subtotal;
+            set { _subtotal = value; OnPropertyChanged(); }
+        }
+
         // --- COMMANDS ---
         public ICommand IncreaseSelectedQtyCommand { get; }
         public ICommand DecreaseSelectedQtyCommand { get; }
@@ -63,6 +101,8 @@ namespace PosApp.ViewModels
         public ICommand ToggleNameSortCommand { get; }
         public ICommand TogglePriceSortCommand { get; }
         public ICommand SelectPaymentMethodCommand { get; }
+        public ICommand ApplyPromoCommand { get; }
+        public ICommand RemovePromoCommand { get; }
 
         public SalesViewModel()
         {
@@ -98,6 +138,50 @@ namespace PosApp.ViewModels
                 if (!string.IsNullOrEmpty(method)) SelectedPaymentMethod = method;
             });
 
+            ApplyPromoCommand = new Command(async () =>
+            {
+                if (string.IsNullOrWhiteSpace(PromoCodeInput)) return;
+
+                var code = PromoCodeInput.Trim().ToUpper();
+
+                // Compute subtotal first to ensure math is current
+                Subtotal = CartItems.Sum(x => x.TotalPrice);
+
+                if (code == "SAVE10")
+                {
+                    DiscountAmount = Math.Round(Subtotal * 0.10m, 2);
+                    AppliedPromoName = "SAVE10 (10% Off)";
+                }
+                else if (code == "FLAT5")
+                {
+                    DiscountAmount = 5.00m;
+                    AppliedPromoName = "FLAT5 ($5.00 Off)";
+                }
+                else
+                {
+                    if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
+                    {
+                        await currentPage.DisplayAlert("Invalid Code", "The promo code entered is invalid.", "OK");
+                    }
+                    return;
+                }
+
+                if (DiscountAmount > Subtotal)
+                {
+                    DiscountAmount = Subtotal;
+                }
+
+                PromoCodeInput = string.Empty;
+                CalculateGrandTotal();
+            });
+
+            RemovePromoCommand = new Command(() =>
+            {
+                DiscountAmount = 0;
+                AppliedPromoName = string.Empty;
+                CalculateGrandTotal();
+            });
+
             DecreaseSelectedQtyCommand = new Command<Product>(product =>
             {
                 if (product != null && product.SelectedQuantity > 0)
@@ -122,8 +206,9 @@ namespace PosApp.ViewModels
                 if (product.SelectedQuantity > product.Stock)
                 {
                     if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
+                    {
                         await currentPage.DisplayAlert("Invalid Quantity", $"Cannot set quantity higher than available stock ({product.Stock}).", "OK");
-
+                    }
                     product.SelectedQuantity = product.Stock;
                     return;
                 }
@@ -149,7 +234,7 @@ namespace PosApp.ViewModels
                             ProductId = product.Id,
                             Name = product.Name,
                             Price = product.Price,
-                            Category = product.Category, // Include category in cart items
+                            Category = product.Category,
                             Quantity = product.SelectedQuantity
                         });
                     }
@@ -163,7 +248,7 @@ namespace PosApp.ViewModels
                 if (item != null)
                 {
                     CartItems.Remove(item);
-                    CalculateGrandTotal();
+                    CalculateGrandTotal(); // Re-calculates totals and discounts immediately when item is removed
                 }
             });
 
@@ -196,11 +281,11 @@ namespace PosApp.ViewModels
                 var receiptTotal = GrandTotal;
 
                 CartItems.Clear();
+                DiscountAmount = 0;
+                AppliedPromoName = string.Empty;
                 CalculateGrandTotal();
-
-                // Reset Payment Method for next customer
                 SelectedPaymentMethod = "Cash";
-                await LoadCatalogAsync(); // Reload to refresh stock UI
+                await LoadCatalogAsync();
 
                 if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
                 {
@@ -211,7 +296,21 @@ namespace PosApp.ViewModels
 
         public void CalculateGrandTotal()
         {
-            GrandTotal = CartItems.Sum(x => x.TotalPrice);
+            Subtotal = CartItems.Sum(x => x.TotalPrice);
+
+            // If a percentage discount like SAVE10 is active, update the discount amount dynamically if items change
+            if (AppliedPromoName.Contains("SAVE10"))
+            {
+                DiscountAmount = Math.Round(Subtotal * 0.10m, 2);
+            }
+
+            if (DiscountAmount > Subtotal)
+            {
+                DiscountAmount = Subtotal;
+            }
+
+            GrandTotal = Subtotal - DiscountAmount;
+            if (GrandTotal < 0) GrandTotal = 0;
         }
 
         public async Task LoadCatalogAsync()
