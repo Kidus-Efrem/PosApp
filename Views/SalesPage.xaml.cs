@@ -1,21 +1,29 @@
-﻿using PosApp.ViewModels;
-
-namespace PosApp.Views;
+﻿namespace PosApp.Views;
 
 public partial class SalesPage : ContentPage
 {
-    private SalesViewModel _viewModel;
-
     public SalesPage()
     {
         InitializeComponent();
-        _viewModel = new SalesViewModel();
-        BindingContext = _viewModel;
+        BindingContext = new ViewModels.SalesViewModel();
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadCatalogAsync();
+        if (BindingContext is ViewModels.SalesViewModel vm)
+        {
+            await vm.LoadCatalogAsync();
+        }
+    }
+
+    private async void OnNavigateToProducts(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("///ProductsPage");
+    }
+
+    private async void OnNavigateToSales(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("///SalesPage");
     }
 }

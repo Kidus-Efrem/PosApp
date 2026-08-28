@@ -27,6 +27,9 @@ namespace PosApp.ViewModels
 
         public SalesViewModel()
         {
+            // Load products immediately upon instantiation so they appear right away
+            _ = LoadCatalogAsync();
+
             DecreaseSelectedQtyCommand = new Command<Product>(product =>
             {
                 if (product != null && product.SelectedQuantity > 0)
@@ -122,14 +125,11 @@ namespace PosApp.ViewModels
                     var productInCatalog = Products.FirstOrDefault(p => p.Id == cartItem.ProductId);
                     if (productInCatalog != null)
                     {
-                        // Deduct stock locally
                         productInCatalog.Stock -= cartItem.Quantity;
                         if (productInCatalog.Stock < 0) productInCatalog.Stock = 0;
 
-                        // Reset input field view
                         productInCatalog.SelectedQuantity = 1;
 
-                        // Save updated stock levels to database using SaveProductAsync
                         await database.SaveProductAsync(productInCatalog);
                     }
                 }
