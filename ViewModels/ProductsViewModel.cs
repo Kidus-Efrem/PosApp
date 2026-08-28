@@ -4,70 +4,79 @@ using PosApp.Models;
 using PosApp.Services;
 using System.Collections.ObjectModel;
 
-namespace PosApp.ViewModels
+namespace PosApp.ViewModels;
+
+public partial class ProductsViewModel : ObservableObject
 {
-    public partial class ProductsViewModel : ObservableObject
+    private readonly PosDatabase _database;
+
+    public ObservableCollection<Product> Products { get; } = new();
+
+    private string name = string.Empty;
+    public string Name
     {
-        private readonly PosDatabase _database;
+        get => name;
+        set => SetProperty(ref name, value);
+    }
 
-        public ObservableCollection<Product> Products { get; } = new();
+    private decimal price;
+    public decimal Price
+    {
+        get => price;
+        set => SetProperty(ref price, value);
+    }
 
-        [ObservableProperty]
-        string productName;
+    private int stock;
+    public int Stock
+    {
+        get => stock;
+        set => SetProperty(ref stock, value);
+    }
 
-        [ObservableProperty]
-        decimal? productPrice;
+    public ProductsViewModel()
+    {
+        _database = new PosDatabase();
+        _ = LoadProductsAsync();
+    }
 
-        [ObservableProperty]
-        int? productStock;
-
-        public ProductsViewModel()
+    [RelayCommand]
+    public async Task LoadProductsAsync()
+    {
+        var list = await _database.GetProductsAsync();
+        Products.Clear();
+        foreach (var p in list)
         {
-            _database = new PosDatabase();
+            Products.Add(p);
         }
+    }
 
-        [RelayCommand]
-        public async Task LoadProductsAsync()
+    [RelayCommand]
+    public async Task AddProductAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Name)) return;
+
+        var newProduct = new Product
         {
-            var productsList = await _database.GetProductsAsync();
-            Products.Clear();
-            foreach (var product in productsList)
-            {
-                Products.Add(product);
-            }
-        }
+            Name = Name,
+            Price = Price,
+            Stock = Stock
+        };
 
-        [RelayCommand]
-        public async Task AddProductAsync()
-        {
-            if (string.IsNullOrWhiteSpace(ProductName) || !ProductPrice.HasValue || ProductPrice <= 0)
-                return;
+        await _database.SaveProductAsync(newProduct);
 
-            var newProduct = new Product
-            {
-                Name = ProductName,
-                Price = ProductPrice ?? 0m,
-                Stock = ProductStock ?? 0
-            };
+        Name = string.Empty;
+        Price = 0;
+        Stock = 0;
 
-            await _database.SaveProductAsync(newProduct);
+        await LoadProductsAsync();
+    }
 
-            // Clear inputs
-            ProductName = string.Empty;
-            ProductPrice = null;
-            ProductStock = null;
+    [RelayCommand]
+    public async Task DeleteProductAsync(Product? product)
+    {
+        if (product == null) return;
 
-            await LoadProductsAsync();
-        }
-
-        [RelayCommand]
-        public async Task DeleteProductAsync(Product product)
-        {
-            if (product != null)
-            {
-                await _database.DeleteProductAsync(product);
-                await LoadProductsAsync();
-            }
-        }
+        await _database.DeleteProductAsync(product);
+        await LoadProductsAsync();
     }
 }

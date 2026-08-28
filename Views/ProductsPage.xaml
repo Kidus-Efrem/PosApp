@@ -1,40 +1,57 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:PosApp.ViewModels"
+             xmlns:viewmodels="clr-namespace:PosApp.ViewModels"
+             xmlns:models="clr-namespace:PosApp.Models"
              x:Class="PosApp.Views.ProductsPage"
-             Title="Point of Sale - Products">
+             x:DataType="viewmodels:ProductsViewModel"
+             Title="Product Management">
 
-    <Grid RowDefinitions="Auto, *, Auto" Padding="20" RowSpacing="15">
+    <Grid Padding="20" ColumnDefinitions="350, *" ColumnSpacing="20">
 
-        <!-- Input Form -->
-        <VerticalStackLayout Grid.Row="0" Spacing="10">
-            <Label Text="Manage Products" FontSize="18" FontAttributes="Bold" />
-            <Entry Placeholder="Product Name" Text="{Binding ProductName}" />
-            <Entry Placeholder="Price (e.g. 9.99)" Keyboard="Numeric" Text="{Binding ProductPrice, TargetNullValue=''}" />
-            <Entry Placeholder="Stock Quantity (e.g. 50)" Keyboard="Numeric" Text="{Binding ProductStock, TargetNullValue=''}" />
-            <Button Text="Add Product" Command="{Binding AddProductCommand}" BackgroundColor="Navy" TextColor="White" />
-        </VerticalStackLayout>
+        <!-- LEFT COLUMN: Add Product Form -->
+        <Border Grid.Column="0" StrokeShape="RoundRectangle 8" Stroke="LightGray" BackgroundColor="#FFFFFF" Padding="15">
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Add New Product" FontSize="18" FontAttributes="Bold" TextColor="#222222" />
 
-        <!-- Product List -->
-        <CollectionView Grid.Row="1" ItemsSource="{Binding Products}">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <HorizontalStackLayout Padding="10" Spacing="15">
-                        <Label Text="{Binding Name}" FontSize="16" WidthRequest="120" VerticalTextAlignment="Center" />
-                        <Label Text="{Binding Price, StringFormat='${0:F2}'}" FontSize="16" WidthRequest="70" VerticalTextAlignment="Center" />
-                        <Label Text="{Binding Stock, StringFormat='Stock: {0}'}" FontSize="14" WidthRequest="90" VerticalTextAlignment="Center" />
-                        <Button Text="Delete" 
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProductsViewModel}}, Path=DeleteProductCommand}" 
-                                CommandParameter="{Binding .}" 
-                                BackgroundColor="IndianRed" 
-                                TextColor="White" />
-                    </HorizontalStackLayout>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                <Label Text="Product Name" FontSize="12" TextColor="#666666" />
+                <Entry Text="{Binding Name}" Placeholder="Enter name..." TextColor="#222222" PlaceholderColor="#999999" />
 
-        <!-- Load Data Trigger -->
-        <Button Grid.Row="2" Text="Refresh List" Command="{Binding LoadProductsCommand}" />
+                <Label Text="Price ($)" FontSize="12" TextColor="#666666" />
+                <Entry Text="{Binding Price}" Keyboard="Numeric" Placeholder="0.00" TextColor="#222222" PlaceholderColor="#999999" />
+
+                <Label Text="Stock Quantity" FontSize="12" TextColor="#666666" />
+                <Entry Text="{Binding Stock}" Keyboard="Numeric" Placeholder="0" TextColor="#222222" PlaceholderColor="#999999" />
+
+                <Button Text="Add Product" 
+                        Command="{Binding AddProductCommand}" 
+                        BackgroundColor="#2E7D32" 
+                        TextColor="White" 
+                        FontAttributes="Bold" 
+                        Margin="0,15,0,0" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- RIGHT COLUMN: Product Catalog List -->
+        <Grid Grid.Column="1" RowDefinitions="Auto, *">
+            <Label Grid.Row="0" Text="Existing Catalog" FontSize="18" FontAttributes="Bold" TextColor="White" Margin="0,0,0,10" />
+
+            <CollectionView Grid.Row="1" ItemsSource="{Binding Products}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Product">
+                        <Border StrokeShape="RoundRectangle 6" Stroke="LightGray" BackgroundColor="White" Padding="12" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="*, Auto, Auto, Auto" ColumnSpacing="15">
+                                <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
+                                    <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="15" TextColor="#222222" />
+                                    <Label Text="{Binding Stock, StringFormat='Stock: {0}'}" FontSize="12" TextColor="#666666" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="{Binding Price, StringFormat='${0:F2}'}" TextColor="#2E7D32" FontAttributes="Bold" FontSize="15" VerticalOptions="Center" />
+                                <Button Grid.Column="2" Text="Delete" Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProductsViewModel}}, Path=DeleteProductCommand}" CommandParameter="{Binding .}" BackgroundColor="#D32F2F" TextColor="White" HeightRequest="36" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
     </Grid>
 </ContentPage>

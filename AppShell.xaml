@@ -1,14 +1,18 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<Shell
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:PosApp.Views"
-    x:Class="PosApp.AppShell"
-    Shell.FlyoutBehavior="Disabled">
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:PosApp.Views"
+       x:Class="PosApp.AppShell"
+       ForegroundColor="White"
+       BackgroundColor="#2E7D32">
 
-    <ShellContent
-        Title="Products"
-        ContentTemplate="{DataTemplate local:ProductsPage}"
-        Route="ProductsPage" />
+    <TabBar>
+        <Tab Title="Point of Sale">
+            <ShellContent ContentTemplate="{DataTemplate views:SalesPage}" />
+        </Tab>
+        <Tab Title="Products">
+            <ShellContent ContentTemplate="{DataTemplate views:ProductsPage}" />
+        </Tab>
+    </TabBar>
 
 </Shell>
