@@ -17,6 +17,23 @@ namespace PosApp.Services
 
             await _database.CreateTableAsync<Product>();
             await _database.CreateTableAsync<Order>();
+
+            // --- SEED DEFAULT PRODUCTS IF CATALOG IS EMPTY ---
+            var productCount = await _database.Table<Product>().CountAsync();
+            if (productCount == 0)
+            {
+                var defaultProducts = new List<Product>
+                {
+                    new Product { Name = "Espresso Coffee", Category = "Beverages", Price = 3.50m, Stock = 50 },
+                    new Product { Name = "Cappuccino", Category = "Beverages", Price = 4.50m, Stock = 40 },
+                    new Product { Name = "Croissant", Category = "Bakery", Price = 2.75m, Stock = 30 },
+                    new Product { Name = "Blueberry Muffin", Category = "Bakery", Price = 3.00m, Stock = 25 },
+                    new Product { Name = "Avocado Toast", Category = "Food", Price = 8.50m, Stock = 15 },
+                    new Product { Name = "Club Sandwich", Category = "Food", Price = 9.25m, Stock = 20 }
+                };
+
+                await _database.InsertAllAsync(defaultProducts);
+            }
         }
 
         public async Task<List<Product>> GetProductsAsync()
