@@ -21,5 +21,8 @@ jobs:
     - name: Restore NuGet Packages
       run: dotnet restore
 
-    - name: Build Android Target
-      run: dotnet build PosApp.csproj --configuration Release --framework net9.0-android --no-restore
+    - name: Build Android Target (Ignoring Tests)
+      run: dotnet build PosApp.csproj --configuration Release --framework net9.0-android --no-restore -p:DefaultItemExcludes="PosApp.Tests\**"
+
+    - name: Run Unit Tests
+      run: dotnet test PosApp.Tests/PosApp.Tests.csproj --configuration Release --no-build
