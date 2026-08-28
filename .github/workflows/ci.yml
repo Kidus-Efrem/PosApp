@@ -25,4 +25,4 @@ jobs:
       run: dotnet build PosApp/PosApp.csproj --configuration Release --framework net9.0-android --no-restore -p:DefaultItemExcludes="PosApp.Tests\**"
 
     - name: Run Unit Tests
-      run: dotnet test PosApp.Tests/PosApp.Tests.csproj --configuration Release --no-build
+      run: dotnet test PosApp.Tests/PosApp.T ests.csproj --configuration Release --no-build
