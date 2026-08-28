@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using SQLite; // Make sure this namespace is included
+using SQLite;
 
 namespace PosApp.Models
 {
@@ -14,6 +14,13 @@ namespace PosApp.Models
         {
             get => _name;
             set { _name = value; OnPropertyChanged(); }
+        }
+
+        private string _category = "General";
+        public string Category
+        {
+            get => _category;
+            set { _category = value; OnPropertyChanged(); }
         }
 
         private decimal _price;
@@ -31,6 +38,8 @@ namespace PosApp.Models
         }
 
         private int _selectedQuantity = 1;
+
+        [Ignore] // Prevents SQLite from saving this UI-only property to the database
         public int SelectedQuantity
         {
             get => _selectedQuantity;

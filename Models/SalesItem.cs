@@ -6,6 +6,7 @@ namespace PosApp.Models
     {
         public int ProductId { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = "General";
         public decimal Price { get; set; }
 
         private int quantity;

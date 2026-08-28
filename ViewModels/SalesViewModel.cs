@@ -9,6 +9,7 @@ namespace PosApp.ViewModels
 {
     public class SalesViewModel : INotifyPropertyChanged
     {
+        private List<Product> _allProducts = new();
         public ObservableCollection<Product> Products { get; set; } = new();
         public ObservableCollection<SalesItem> CartItems { get; set; } = new();
 
@@ -19,23 +20,88 @@ namespace PosApp.ViewModels
             set { _grandTotal = value; OnPropertyChanged(); }
         }
 
+        // --- FILTER & SORT PROPERTIES ---
+        private string _searchQuery = string.Empty;
+        public string SearchQuery { get => _searchQuery; set { _searchQuery = value; OnPropertyChanged(); ApplyFilters(); } }
+
+        private string _selectedFilterCategory = "All Categories";
+        public string SelectedFilterCategory { get => _selectedFilterCategory; set { _selectedFilterCategory = value; OnPropertyChanged(); ApplyFilters(); } }
+
+        private string _nameSortOption = "Default";
+        public string NameSortOption { get => _nameSortOption; set { _nameSortOption = value; OnPropertyChanged(); ApplyFilters(); } }
+
+        private string _priceSortOption = "Default";
+        public string PriceSortOption { get => _priceSortOption; set { _priceSortOption = value; OnPropertyChanged(); ApplyFilters(); } }
+
+        public ObservableCollection<string> FilterCategories { get; } = new();
+
+        // --- PAYMENT METHOD PROPERTIES ---
+        private string _selectedPaymentMethod = "Cash";
+        public string SelectedPaymentMethod
+        {
+            get => _selectedPaymentMethod;
+            set
+            {
+                _selectedPaymentMethod = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsCashSelected));
+                OnPropertyChanged(nameof(IsCardSelected));
+            }
+        }
+
+        public bool IsCashSelected => SelectedPaymentMethod == "Cash";
+        public bool IsCardSelected => SelectedPaymentMethod == "Card";
+
+        // --- COMMANDS ---
         public ICommand IncreaseSelectedQtyCommand { get; }
         public ICommand DecreaseSelectedQtyCommand { get; }
         public ICommand SetCartQuantityCommand { get; }
         public ICommand RemoveFromCartCommand { get; }
         public ICommand CompleteCheckoutCommand { get; }
 
+        public ICommand FilterCategoryCommand { get; }
+        public ICommand ToggleNameSortCommand { get; }
+        public ICommand TogglePriceSortCommand { get; }
+        public ICommand SelectPaymentMethodCommand { get; }
+
         public SalesViewModel()
         {
-            // Load products immediately upon instantiation so they appear right away
             _ = LoadCatalogAsync();
+
+            FilterCategoryCommand = new Command<string>(category =>
+            {
+                if (!string.IsNullOrEmpty(category)) SelectedFilterCategory = category;
+            });
+
+            ToggleNameSortCommand = new Command(() =>
+            {
+                NameSortOption = NameSortOption switch
+                {
+                    "Default" => "A to Z",
+                    "A to Z" => "Z to A",
+                    _ => "Default"
+                };
+            });
+
+            TogglePriceSortCommand = new Command(() =>
+            {
+                PriceSortOption = PriceSortOption switch
+                {
+                    "Default" => "Low to High",
+                    "Low to High" => "High to Low",
+                    _ => "Default"
+                };
+            });
+
+            SelectPaymentMethodCommand = new Command<string>(method =>
+            {
+                if (!string.IsNullOrEmpty(method)) SelectedPaymentMethod = method;
+            });
 
             DecreaseSelectedQtyCommand = new Command<Product>(product =>
             {
                 if (product != null && product.SelectedQuantity > 0)
-                {
                     product.SelectedQuantity--;
-                }
             });
 
             IncreaseSelectedQtyCommand = new Command<Product>(async product =>
@@ -43,16 +109,9 @@ namespace PosApp.ViewModels
                 if (product != null)
                 {
                     if (product.SelectedQuantity < product.Stock)
-                    {
                         product.SelectedQuantity++;
-                    }
-                    else
-                    {
-                        if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
-                        {
-                            await currentPage.DisplayAlert("Stock Limit", $"Cannot exceed available stock ({product.Stock}).", "OK");
-                        }
-                    }
+                    else if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
+                        await currentPage.DisplayAlert("Stock Limit", $"Cannot exceed available stock ({product.Stock}).", "OK");
                 }
             });
 
@@ -63,26 +122,19 @@ namespace PosApp.ViewModels
                 if (product.SelectedQuantity > product.Stock)
                 {
                     if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
-                    {
                         await currentPage.DisplayAlert("Invalid Quantity", $"Cannot set quantity higher than available stock ({product.Stock}).", "OK");
-                    }
+
                     product.SelectedQuantity = product.Stock;
                     return;
                 }
 
-                if (product.SelectedQuantity < 0)
-                {
-                    product.SelectedQuantity = 0;
-                }
+                if (product.SelectedQuantity < 0) product.SelectedQuantity = 0;
 
                 var existingItem = CartItems.FirstOrDefault(x => x.ProductId == product.Id);
 
                 if (product.SelectedQuantity == 0)
                 {
-                    if (existingItem != null)
-                    {
-                        CartItems.Remove(existingItem);
-                    }
+                    if (existingItem != null) CartItems.Remove(existingItem);
                 }
                 else
                 {
@@ -97,6 +149,7 @@ namespace PosApp.ViewModels
                             ProductId = product.Id,
                             Name = product.Name,
                             Price = product.Price,
+                            Category = product.Category, // Include category in cart items
                             Quantity = product.SelectedQuantity
                         });
                     }
@@ -120,22 +173,18 @@ namespace PosApp.ViewModels
 
                 var database = new PosDatabase();
 
-                // 1. Deduct stock and save products to database
                 foreach (var cartItem in CartItems)
                 {
-                    var productInCatalog = Products.FirstOrDefault(p => p.Id == cartItem.ProductId);
+                    var productInCatalog = _allProducts.FirstOrDefault(p => p.Id == cartItem.ProductId);
                     if (productInCatalog != null)
                     {
                         productInCatalog.Stock -= cartItem.Quantity;
                         if (productInCatalog.Stock < 0) productInCatalog.Stock = 0;
-
                         productInCatalog.SelectedQuantity = 1;
-
                         await database.SaveProductAsync(productInCatalog);
                     }
                 }
 
-                // 2. Save the completed Order record for Sales History
                 var newOrder = new Order
                 {
                     TotalAmount = GrandTotal,
@@ -143,15 +192,16 @@ namespace PosApp.ViewModels
                 };
                 await database.SaveOrderAsync(newOrder);
 
-                // 3. Create a snapshot copy of the cart and total to pass to the Receipt Modal
                 var receiptItems = new ObservableCollection<SalesItem>(CartItems);
                 var receiptTotal = GrandTotal;
 
-                // 4. Clear cart and reset totals for the next customer
                 CartItems.Clear();
                 CalculateGrandTotal();
 
-                // 5. Pop up the receipt modal
+                // Reset Payment Method for next customer
+                SelectedPaymentMethod = "Cash";
+                await LoadCatalogAsync(); // Reload to refresh stock UI
+
                 if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
                 {
                     await currentPage.Navigation.PushModalAsync(new Views.ReceiptPopupPage(receiptItems, receiptTotal));
@@ -167,13 +217,48 @@ namespace PosApp.ViewModels
         public async Task LoadCatalogAsync()
         {
             var database = new PosDatabase();
-            var list = await database.GetProductsAsync();
+            _allProducts = await database.GetProductsAsync();
+
+            var uniqueCategories = _allProducts
+                .Select(p => p.Category)
+                .Distinct()
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .ToList();
+
+            FilterCategories.Clear();
+            FilterCategories.Add("All Categories");
+            foreach (var cat in uniqueCategories) FilterCategories.Add(cat);
+
+            if (!FilterCategories.Contains(SelectedFilterCategory)) SelectedFilterCategory = "All Categories";
+
+            ApplyFilters();
+        }
+
+        private void ApplyFilters()
+        {
+            var filtered = _allProducts.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(SearchQuery))
+                filtered = filtered.Where(p => p.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+
+            if (SelectedFilterCategory != "All Categories" && !string.IsNullOrEmpty(SelectedFilterCategory))
+                filtered = filtered.Where(p => p.Category == SelectedFilterCategory);
+
+            if (PriceSortOption == "Low to High")
+                filtered = filtered.OrderBy(p => p.Price);
+            else if (PriceSortOption == "High to Low")
+                filtered = filtered.OrderByDescending(p => p.Price);
+
+            if (NameSortOption == "A to Z")
+                filtered = PriceSortOption == "Default" ? filtered.OrderBy(p => p.Name) : ((IOrderedEnumerable<Product>)filtered).ThenBy(p => p.Name);
+            else if (NameSortOption == "Z to A")
+                filtered = PriceSortOption == "Default" ? filtered.OrderByDescending(p => p.Name) : ((IOrderedEnumerable<Product>)filtered).ThenByDescending(p => p.Name);
+
+            if (PriceSortOption == "Default" && NameSortOption == "Default")
+                filtered = filtered.OrderBy(p => p.Id);
 
             Products.Clear();
-            foreach (var p in list)
-            {
-                Products.Add(p);
-            }
+            foreach (var p in filtered) Products.Add(p);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
