@@ -2,27 +2,25 @@ name: .NET MAUI CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, feature/* ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   build:
+
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup .NET SDK
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
 
-    - name: Install .NET MAUI Workload
-      run: dotnet workload install maui
-
-    - name: Restore Dependencies
+    - name: Restore NuGet Packages
       run: dotnet restore
 
-    - name: Build Solution
+    - name: Build Project
       run: dotnet build --configuration Release --no-restore
