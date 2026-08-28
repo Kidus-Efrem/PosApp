@@ -21,6 +21,7 @@
                 <HorizontalStackLayout Grid.Column="1" Spacing="10" VerticalOptions="Center">
                     <Button Text="Point of Sale" Clicked="OnNavigateToSales" BackgroundColor="#F1F5F9" TextColor="#334155" FontSize="12" FontAttributes="Bold" CornerRadius="8" HeightRequest="38" Padding="14,0" />
                     <Button Text="Products" Clicked="OnNavigateToProducts" BackgroundColor="#059669" TextColor="White" FontSize="12" FontAttributes="Bold" CornerRadius="8" HeightRequest="38" Padding="14,0" />
+                    <Button Text="History" Clicked="OnNavigateToHistory" BackgroundColor="#059669" TextColor="White" FontSize="12" FontAttributes="Bold" CornerRadius="8" HeightRequest="38" Padding="14,0" />
                 </HorizontalStackLayout>
             </Grid>
         </Border>

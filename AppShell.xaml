@@ -16,4 +16,9 @@
         ContentTemplate="{DataTemplate views:ProductsPage}" 
         Route="ProductsPage" />
 
+    <ShellContent 
+        Title="Sales History"
+        ContentTemplate="{DataTemplate views:SalesHistoryPage}" 
+        Route="SalesHistoryPage" />
+
 </Shell>

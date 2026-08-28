@@ -120,6 +120,7 @@ namespace PosApp.ViewModels
 
                 var database = new PosDatabase();
 
+                // 1. Deduct stock and save products to database
                 foreach (var cartItem in CartItems)
                 {
                     var productInCatalog = Products.FirstOrDefault(p => p.Id == cartItem.ProductId);
@@ -134,12 +135,21 @@ namespace PosApp.ViewModels
                     }
                 }
 
+                // 2. Save the completed Order record for Sales History
+                var newOrder = new Order
+                {
+                    TotalAmount = GrandTotal,
+                    OrderDate = DateTime.Now
+                };
+                await database.SaveOrderAsync(newOrder);
+
+                // 3. Clear cart and reset totals
                 CartItems.Clear();
                 CalculateGrandTotal();
 
                 if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
                 {
-                    await currentPage.DisplayAlert("Success", "Sale completed and stock updated successfully!", "OK");
+                    await currentPage.DisplayAlert("Success", "Sale completed, stock updated, and order recorded!", "OK");
                 }
             });
         }

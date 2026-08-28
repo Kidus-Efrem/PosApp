@@ -28,4 +28,8 @@ public partial class ProductsPage : ContentPage
     {
         await Shell.Current.GoToAsync("///SalesPage");
     }
+    private async void OnNavigateToHistory(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("///SalesHistoryPage");
+    }
 }

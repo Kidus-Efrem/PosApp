@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:PosApp.ViewModels"
+             xmlns:models="clr-namespace:PosApp.Models"
+             x:Class="PosApp.Views.SalesHistoryPage"
+             x:DataType="viewmodels:SalesHistoryViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#F8FAFC">
+
+    <Grid RowDefinitions="Auto, *" Padding="20" RowSpacing="20">
+
+        <!-- CUSTOM TOP NAVIGATION & TITLE BAR -->
+        <Border Grid.Row="0" StrokeShape="RoundRectangle 12" Stroke="#E2E8F0" BackgroundColor="White" Padding="16">
+            <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                    <Label Text="Sales History" FontSize="22" FontAttributes="Bold" TextColor="#0F172A" />
+                    <Label Text="Review completed customer orders and transaction logs" FontSize="12" TextColor="#64748B" />
+                </VerticalStackLayout>
+
+                <HorizontalStackLayout Grid.Column="1" Spacing="10" VerticalOptions="Center">
+                    <Button Text="Point of Sale" Clicked="OnNavigateToSales" BackgroundColor="#F1F5F9" TextColor="#334155" FontSize="12" FontAttributes="Bold" CornerRadius="8" HeightRequest="38" Padding="14,0" />
+                    <Button Text="Products" Clicked="OnNavigateToProducts" BackgroundColor="#F1F5F9" TextColor="#334155" FontSize="12" FontAttributes="Bold" CornerRadius="8" HeightRequest="38" Padding="14,0" />
+                    <Button Text="History" Clicked="OnNavigateToHistory" BackgroundColor="#059669" TextColor="White" FontSize="12" FontAttributes="Bold" CornerRadius="8" HeightRequest="38" Padding="14,0" />
+                </HorizontalStackLayout>
+            </Grid>
+        </Border>
+
+        <!-- MAIN CONTENT AREA: Orders List -->
+        <Grid Grid.Row="1" RowDefinitions="Auto, *">
+            <VerticalStackLayout Grid.Row="0" Spacing="4" Margin="0,0,0,12">
+                <Label Text="Completed Transactions" FontSize="20" FontAttributes="Bold" TextColor="#0F172A" />
+                <Label Text="All recorded checkouts" FontSize="13" TextColor="#64748B" />
+            </VerticalStackLayout>
+
+            <CollectionView Grid.Row="1" ItemsSource="{Binding Orders}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Order">
+                        <Border StrokeShape="RoundRectangle 12" Stroke="#E2E8F0" BackgroundColor="White" Padding="16" Margin="0,0,0,10">
+                            <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                    <Label Text="{Binding Id, StringFormat='Order #{0}'}" FontAttributes="Bold" FontSize="15" TextColor="#1E293B" />
+                                    <Label Text="{Binding OrderDate, StringFormat='Date: {0:g}'}" FontSize="12" TextColor="#64748B" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="{Binding TotalAmount, StringFormat='${0:F2}'}" TextColor="#059669" FontAttributes="Bold" FontSize="18" VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>
