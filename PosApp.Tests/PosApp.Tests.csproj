@@ -20,9 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Only compile the core data structures needed for cart and promo calculations -->
-    <Compile Include="..\Models\Product.cs" />
-    <Compile Include="..\Models\SalesItem.cs" />
+    <ProjectReference Include="..\PosApp.csproj" />
   </ItemGroup>
 
 </Project>
