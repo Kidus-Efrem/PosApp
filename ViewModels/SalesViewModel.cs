@@ -57,14 +57,13 @@ namespace PosApp.ViewModels
             {
                 if (product == null) return;
 
-                // Strict block: if typed value exceeds stock, abort and notify
                 if (product.SelectedQuantity > product.Stock)
                 {
                     if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
                     {
                         await currentPage.DisplayAlert("Invalid Quantity", $"Cannot set quantity higher than available stock ({product.Stock}).", "OK");
                     }
-                    product.SelectedQuantity = product.Stock; // Reset input field to max allowable stock
+                    product.SelectedQuantity = product.Stock;
                     return;
                 }
 
@@ -116,12 +115,31 @@ namespace PosApp.ViewModels
             {
                 if (CartItems.Count == 0) return;
 
+                var database = new PosDatabase();
+
+                foreach (var cartItem in CartItems)
+                {
+                    var productInCatalog = Products.FirstOrDefault(p => p.Id == cartItem.ProductId);
+                    if (productInCatalog != null)
+                    {
+                        // Deduct stock locally
+                        productInCatalog.Stock -= cartItem.Quantity;
+                        if (productInCatalog.Stock < 0) productInCatalog.Stock = 0;
+
+                        // Reset input field view
+                        productInCatalog.SelectedQuantity = 1;
+
+                        // Save updated stock levels to database using SaveProductAsync
+                        await database.SaveProductAsync(productInCatalog);
+                    }
+                }
+
                 CartItems.Clear();
                 CalculateGrandTotal();
 
                 if (Application.Current?.Windows.FirstOrDefault()?.Page is Page currentPage)
                 {
-                    await currentPage.DisplayAlert("Success", "Sale completed successfully!", "OK");
+                    await currentPage.DisplayAlert("Success", "Sale completed and stock updated successfully!", "OK");
                 }
             });
         }

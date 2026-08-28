@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using SQLite; // Make sure this namespace is included
 
 namespace PosApp.Models
 {
     public class Product : INotifyPropertyChanged
     {
+        [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
         private string _name = string.Empty;
@@ -41,7 +43,7 @@ namespace PosApp.Models
                 }
                 else if (value > Stock)
                 {
-                    _selectedQuantity = Stock; // Hard cap at maximum stock
+                    _selectedQuantity = Stock;
                     OnPropertyChanged();
                 }
                 else if (value < 0)
