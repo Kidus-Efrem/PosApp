@@ -23,3 +23,6 @@ jobs:
 
     - name: Build Android Target
       run: dotnet build PosApp.csproj --configuration Release --framework net9.0-android --no-restore
+
+    - name: Run Unit Tests
+      run: dotnet test PosApp.Tests/PosApp.Tests.csproj --configuration Release --no-build
