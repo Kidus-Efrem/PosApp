@@ -1,0 +1,25 @@
+name: .NET MAUI CI
+
+on:
+  push:
+    branches: [ main, feature/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore NuGet Packages
+      run: dotnet restore
+
+    - name: Build Android Target
+      run: dotnet build PosApp.csproj --configuration Release --framework net9.0-android --no-restore
