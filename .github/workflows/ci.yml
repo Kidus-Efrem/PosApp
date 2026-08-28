@@ -22,4 +22,4 @@ jobs:
       run: dotnet restore
 
     - name: Build Android Target
-      run: dotnet build PosApp/PosApp.csproj --configuration Release --framework net9.0-android --no-restore
+      run: dotnet build PosApp.csproj --configuration Release --framework net9.0-android --no-restore
