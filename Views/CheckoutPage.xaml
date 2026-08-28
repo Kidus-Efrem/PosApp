@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:PosApp.ViewModels"
+             xmlns:models="clr-namespace:PosApp.Models"
+             x:Class="PosApp.Views.CheckoutPage"
+             Title="POS Checkout">
+
+    <ContentPage.BindingContext>
+        <viewmodels:CheckoutViewModel />
+    </ContentPage.BindingContext>
+
+    <Grid x:Name="MainLayout" Padding="15" ColumnDefinitions="*, 400" ColumnSpacing="15">
+        
+        <!-- LEFT COLUMN: Product Catalog (Click to Add) -->
+        <VerticalStackLayout Grid.Column="0" Spacing="10">
+            <Label Text="Product Catalog" FontSize="20" FontAttributes="Bold" />
+            <Label Text="Tap any product to add it to the cart" FontSize="12" TextColor="Gray" />
+
+            <CollectionView ItemsSource="{Binding Products}" SelectionMode="None">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical" Span="3" SpanWidth="150" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Product">
+                        <Frame Margin="5" Padding="10" HasShadow="True" BackgroundColor="White">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:CheckoutViewModel}}, Path=AddToCartCommand}"
+                                                      CommandParameter="{Binding .}" />
+                            </Frame.GestureRecognizers>
+                            <VerticalStackLayout Spacing="5">
+                                <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding Price, StringFormat='${0:F2}'}" TextColor="DarkGreen" FontSize="14" />
+                                <Label Text="{Binding Stock, StringFormat='Stock: {0}'}" TextColor="Gray" FontSize="11" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+
+        <!-- RIGHT COLUMN: Active Cart & Checkout Summary -->
+        <Border Grid.Column="1" StrokeThickness="1" Stroke="LightGray" BackgroundColor="#F9F9F9" Padding="15">
+            <Grid RowDefinitions="Auto, *, Auto, Auto" RowSpacing="10">
+                
+                <Label Grid.Row="0" Text="Current Order" FontSize="18" FontAttributes="Bold" />
+
+                <!-- Cart Items List -->
+                <CollectionView Grid.Row="1" ItemsSource="{Binding CartItems}" SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:CartItem">
+                            <Grid ColumnDefinitions="*, Auto, Auto" Padding="5" ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0">
+                                    <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Price, StringFormat='${0:F2}'}" FontSize="12" TextColor="Gray" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="{Binding Quantity, StringFormat='x{0}'}" VerticalOptions="Center" />
+                                <Button Grid.Column="2" Text="-" Padding="8,2" 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:CheckoutViewModel}}, Path=RemoveFromCartCommand}"
+                                        CommandParameter="{Binding .}" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Totals Section -->
+                <VerticalStackLayout Grid.Row="2" Spacing="5">
+                    <BoxView HeightRequest="1" Color="LightGray" />
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Total:" FontSize="18" FontAttributes="Bold" />
+                        <Label Grid.Column="1" Text="{Binding GrandTotal, StringFormat='${0:F2}'}" FontSize="18" FontAttributes="Bold" TextColor="DarkGreen" />
+                    </Grid>
+                </VerticalStackLayout>
+
+                <!-- Checkout Button -->
+                <Button Grid.Row="3" Text="Complete Checkout" BackgroundColor="DarkGreen" TextColor="White" 
+                        Command="{Binding CompleteCheckoutCommand}" HeightRequest="50" />
+            </Grid>
+        </Border>
+    </Grid>
+
+    <!-- RESPONSIVE LAYOUT TRIGGER: Stacks view if screen width is narrow (Mobile / Resized Window) -->
+    <ContentPage.VisualStateGroups>
+        <VisualStateGroup x:Name="LayoutStates">
+            <VisualState x:Name="DesktopView">
+                <VisualState.Setters>
+                    <Setter TargetName="MainLayout" Property="Grid.ColumnDefinitions" Value="*, 400" />
+                </VisualState.Setters>
+            </VisualState>
+            <VisualState x:Name="MobileView">
+                <VisualState.StateTriggers>
+                    <AdaptiveTrigger MinWindowWidth="0" />
+                </VisualState.StateTriggers>
+                <VisualState.Setters>
+                    <Setter TargetName="MainLayout" Property="Grid.ColumnDefinitions" Value="*" />
+                    <Setter TargetName="MainLayout" Property="Grid.RowDefinitions" Value="*, *" />
+                </VisualState.Setters>
+            </VisualState>
+        </VisualStateGroup>
+    </ContentPage.VisualStateGroups>
+</ContentPage>

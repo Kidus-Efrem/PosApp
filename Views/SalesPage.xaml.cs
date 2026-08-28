@@ -1,21 +1,19 @@
 ﻿namespace PosApp.Views;
 
-public partial class ProductsPage : ContentPage
+public partial class SalesPage : ContentPage
 {
-    public ProductsPage()
+    public SalesPage()
     {
         InitializeComponent();
-
-        // Explicitly set the BindingContext so data and commands bind correctly
-        BindingContext = new ViewModels.ProductsViewModel();
+        BindingContext = new ViewModels.SalesViewModel();
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        if (BindingContext is ViewModels.ProductsViewModel vm)
+        if (BindingContext is ViewModels.SalesViewModel vm)
         {
-            await vm.LoadProductsAsync();
+            await vm.LoadCatalogAsync();
         }
     }
 

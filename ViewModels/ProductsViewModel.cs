@@ -1,73 +1,92 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using PosApp.Models;
 using PosApp.Services;
-using System.Collections.ObjectModel;
 
 namespace PosApp.ViewModels
 {
-    public partial class ProductsViewModel : ObservableObject
+    public class ProductsViewModel : INotifyPropertyChanged
     {
-        private readonly PosDatabase _database;
+        public ObservableCollection<Product> Products { get; set; } = new();
 
-        public ObservableCollection<Product> Products { get; } = new();
+        private string _name = string.Empty;
+        public string Name
+        {
+            get => _name;
+            set { _name = value; OnPropertyChanged(); }
+        }
 
-        [ObservableProperty]
-        string productName;
+        private decimal _price;
+        public decimal Price
+        {
+            get => _price;
+            set { _price = value; OnPropertyChanged(); }
+        }
 
-        [ObservableProperty]
-        decimal? productPrice;
+        private int _stock;
+        public int Stock
+        {
+            get => _stock;
+            set { _stock = value; OnPropertyChanged(); }
+        }
 
-        [ObservableProperty]
-        int? productStock;
+        public ICommand AddProductCommand { get; }
+        public ICommand DeleteProductCommand { get; }
 
         public ProductsViewModel()
         {
-            _database = new PosDatabase();
+            // Load products immediately upon creation
+            _ = LoadProductsAsync();
+
+            AddProductCommand = new Command(async () =>
+            {
+                if (string.IsNullOrWhiteSpace(Name)) return;
+
+                var newProduct = new Product
+                {
+                    Name = Name,
+                    Price = Price,
+                    Stock = Stock,
+                    SelectedQuantity = 1
+                };
+
+                var database = new PosDatabase();
+                await database.SaveProductAsync(newProduct);
+
+                // Clear form fields
+                Name = string.Empty;
+                Price = 0;
+                Stock = 0;
+
+                await LoadProductsAsync();
+            });
+
+            DeleteProductCommand = new Command<Product>(async product =>
+            {
+                if (product == null) return;
+
+                var database = new PosDatabase();
+                await database.DeleteProductAsync(product);
+                await LoadProductsAsync();
+            });
         }
 
-        [RelayCommand]
         public async Task LoadProductsAsync()
         {
-            var productsList = await _database.GetProductsAsync();
+            var database = new PosDatabase();
+            var list = await database.GetProductsAsync();
+
             Products.Clear();
-            foreach (var product in productsList)
+            foreach (var p in list)
             {
-                Products.Add(product);
+                Products.Add(p);
             }
         }
 
-        [RelayCommand]
-        public async Task AddProductAsync()
-        {
-            if (string.IsNullOrWhiteSpace(ProductName) || !ProductPrice.HasValue || ProductPrice <= 0)
-                return;
-
-            var newProduct = new Product
-            {
-                Name = ProductName,
-                Price = ProductPrice ?? 0m,
-                Stock = ProductStock ?? 0
-            };
-
-            await _database.SaveProductAsync(newProduct);
-
-            // Clear inputs
-            ProductName = string.Empty;
-            ProductPrice = null;
-            ProductStock = null;
-
-            await LoadProductsAsync();
-        }
-
-        [RelayCommand]
-        public async Task DeleteProductAsync(Product product)
-        {
-            if (product != null)
-            {
-                await _database.DeleteProductAsync(product);
-                await LoadProductsAsync();
-            }
-        }
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null!) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
