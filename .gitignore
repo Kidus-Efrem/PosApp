@@ -1,0 +1,21 @@
+# Visual Studio user files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results and assemblies
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+build/
+
+# .NET Native
+x64/
+x86/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
