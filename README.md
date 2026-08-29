@@ -351,7 +351,7 @@ dotnet --version
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Kidus-Efrem/PosApp
 cd PosApp
 ```
 
@@ -420,7 +420,7 @@ For a production POS system, add authentication and role-based permissions for c
 
 ## 🤖 AI Assistance Disclosure
 
-AI coding assistants, including **Claude and ChatGPT**, were used during development to accelerate:
+AI coding assistants, were used during development to accelerate:
 
 * XAML UI boilerplate
 * xUnit test structure
